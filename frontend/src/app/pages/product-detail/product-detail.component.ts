@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, signal, computed } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CurrencyPipe, DatePipe } from '@angular/common';
 import { ProductsService } from '../../services/products.service';
@@ -24,13 +24,17 @@ import { ReviewFormComponent } from '../../components/review-form/review-form.co
 export class ProductDetailComponent implements OnInit {
   @ViewChild(ReviewFormComponent) reviewForm!: ReviewFormComponent;
 
-  product: Product | null = null;
-  reviews: Review[] = [];
-  loading = true;
+  product = signal<Product | null>(null);
+  reviews = signal<Review[]>([]);
+  loading = signal(true);
 
-  reviewsPage = 1;
+  reviewsPage = signal(1);
   reviewsLimit = 5;
-  reviewsTotalPages = 1;
+  reviewsTotalPages = signal(1);
+
+  reviewPages = computed(() =>
+    Array.from({ length: this.reviewsTotalPages() }, (_, i) => i + 1),
+  );
 
   private productId = '';
 
@@ -38,7 +42,6 @@ export class ProductDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private productsService: ProductsService,
     private reviewsService: ReviewsService,
-    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -48,13 +51,11 @@ export class ProductDetailComponent implements OnInit {
 
     this.productsService.getProduct(id).subscribe({
       next: (product) => {
-        this.product = product;
-        this.loading = false;
-        this.cdr.markForCheck();
+        this.product.set(product);
+        this.loading.set(false);
       },
       error: () => {
-        this.loading = false;
-        this.cdr.markForCheck();
+        this.loading.set(false);
       },
     });
 
@@ -63,25 +64,20 @@ export class ProductDetailComponent implements OnInit {
 
   loadReviews(): void {
     this.reviewsService
-      .getReviews(this.productId, this.reviewsPage, this.reviewsLimit)
+      .getReviews(this.productId, this.reviewsPage(), this.reviewsLimit)
       .subscribe({
         next: (res) => {
-          this.reviews = res.data;
-          this.reviewsTotalPages = res.totalPages;
-          this.reviewsPage = res.page;
-          this.cdr.markForCheck();
+          this.reviews.set(res.data);
+          this.reviewsTotalPages.set(res.totalPages);
+          this.reviewsPage.set(res.page);
         },
       });
   }
 
   goToReviewsPage(page: number): void {
-    if (page < 1 || page > this.reviewsTotalPages) return;
-    this.reviewsPage = page;
+    if (page < 1 || page > this.reviewsTotalPages()) return;
+    this.reviewsPage.set(page);
     this.loadReviews();
-  }
-
-  get reviewPages(): number[] {
-    return Array.from({ length: this.reviewsTotalPages }, (_, i) => i + 1);
   }
 
   onReviewSubmit(review: CreateReview): void {
@@ -90,22 +86,18 @@ export class ProductDetailComponent implements OnInit {
         this.reviewForm.reset();
 
         // Reset to page 1 to see the new review at top
-        this.reviewsPage = 1;
+        this.reviewsPage.set(1);
         this.loadReviews();
 
         // Refresh product to get updated rating
         this.productsService.getProduct(this.productId).subscribe({
           next: (updated) => {
-            this.product = updated;
-            this.cdr.markForCheck();
+            this.product.set(updated);
           },
         });
-
-        this.cdr.markForCheck();
       },
       error: () => {
         this.reviewForm.submitting = false;
-        this.cdr.markForCheck();
       },
     });
   }

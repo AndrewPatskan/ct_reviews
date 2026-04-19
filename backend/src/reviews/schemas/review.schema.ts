@@ -5,7 +5,7 @@ export type ReviewDocument = Review & Document;
 
 @Schema({ timestamps: true })
 export class Review {
-  @Prop({ type: Types.ObjectId, ref: 'Product', required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Product', required: true, index: true })
   productId: Types.ObjectId;
 
   @Prop({ required: true })
@@ -19,3 +19,4 @@ export class Review {
 }
 
 export const ReviewSchema = SchemaFactory.createForClass(Review);
+ReviewSchema.index({ productId: 1, createdAt: -1 });
