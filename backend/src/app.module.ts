@@ -6,6 +6,7 @@ import { validate } from './config/env.validation';
 import { RedisModule } from './redis/redis.module';
 import { ProductsModule } from './products/products.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { SeederModule } from './seeder/seeder.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     RedisModule,
     ProductsModule,
     ReviewsModule,
+    SeederModule,
   ],
 })
 export class AppModule {}

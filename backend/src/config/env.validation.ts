@@ -2,6 +2,9 @@ import { plainToInstance } from 'class-transformer';
 import { IsNumber, IsString, validateSync, IsOptional } from 'class-validator';
 
 class EnvironmentVariables {
+  @IsString()
+  NODE_ENV?: string;
+
   @IsNumber()
   @IsOptional()
   PORT?: number;
