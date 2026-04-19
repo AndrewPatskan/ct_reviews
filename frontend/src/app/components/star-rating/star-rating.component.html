@@ -1,0 +1,5 @@
+<div class="stars" [class.stars--sm]="size === 'sm'">
+  @for (star of stars; track $index) {
+    <span class="star" [class.star--full]="star === 'full'">★</span>
+  }
+</div>

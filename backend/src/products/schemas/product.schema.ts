@@ -16,6 +16,12 @@ export class Product {
 
   @Prop({ required: false })
   imageUrl?: string;
+
+  @Prop({ default: 0 })
+  averageRating: number;
+
+  @Prop({ default: 0 })
+  reviewCount: number;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

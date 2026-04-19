@@ -1,0 +1,53 @@
+<form class="review-form" (ngSubmit)="onSubmit()">
+  <h3 class="review-form__title">Write a Review</h3>
+
+  <div class="review-form__field">
+    <label for="author" class="review-form__label">Your Name</label>
+    <input
+      id="author"
+      type="text"
+      class="review-form__input"
+      [(ngModel)]="author"
+      name="author"
+      placeholder="Enter your name"
+      required
+    />
+  </div>
+
+  <div class="review-form__field">
+    <label for="rating" class="review-form__label">Rating</label>
+    <div class="review-form__stars">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <button
+          type="button"
+          class="review-form__star"
+          [class.review-form__star--active]="i <= rating"
+          (click)="rating = i"
+        >
+          ★
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="review-form__field">
+    <label for="text" class="review-form__label">Review</label>
+    <textarea
+      id="text"
+      class="review-form__textarea"
+      [(ngModel)]="text"
+      name="text"
+      rows="4"
+      placeholder="Share your thoughts about this product..."
+      required
+    ></textarea>
+  </div>
+
+  <button
+    type="submit"
+    class="review-form__submit"
+    [disabled]="submitting || !author.trim() || !text.trim()"
+  >
+    {{ submitting ? 'Submitting...' : 'Submit Review' }}
+  </button>
+</form>

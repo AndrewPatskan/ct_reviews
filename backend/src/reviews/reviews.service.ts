@@ -3,6 +3,15 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { Review } from './schemas/review.schema';
 import { RedisService } from '../redis/redis.service';
 import { ReviewsRepository } from './reviews.repository';
+import { ProductsRepository } from '../products/products.repository';
+
+interface PaginatedReviews {
+  data: Review[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
 @Injectable()
 export class ReviewsService {
@@ -10,33 +19,65 @@ export class ReviewsService {
 
   constructor(
     private readonly reviewsRepository: ReviewsRepository,
+    private readonly productsRepository: ProductsRepository,
     private readonly redisService: RedisService,
   ) {}
 
   async create(createReviewDto: CreateReviewDto): Promise<Review> {
     const result = await this.reviewsRepository.create(createReviewDto);
 
-    // Invalidate product's reviews cache
-    await this.redisService.del(
-      `${this.CACHE_PREFIX}:product:${createReviewDto.productId}`,
+    // Recalculate and persist rating on the product
+    const { averageRating, reviewCount } =
+      await this.reviewsRepository.aggregateRating(createReviewDto.productId);
+    await this.productsRepository.updateRating(
+      createReviewDto.productId,
+      averageRating,
+      reviewCount,
     );
+
+    // Invalidate caches
+    await Promise.all([
+      this.redisService.delByPattern(
+        `${this.CACHE_PREFIX}:product:${createReviewDto.productId}*`,
+      ),
+      this.redisService.del(`products:${createReviewDto.productId}`),
+      this.redisService.delByPattern('products:list*'),
+    ]);
 
     return result;
   }
 
-  async findByProduct(productId: string): Promise<Review[]> {
-    const cacheKey = `${this.CACHE_PREFIX}:product:${productId}`;
-    const cachedReviews = await this.redisService.get(cacheKey);
+  async findByProduct(
+    productId: string,
+    page: number,
+    limit: number,
+  ): Promise<PaginatedReviews> {
+    const cacheKey = `${this.CACHE_PREFIX}:product:${productId}:${page}:${limit}`;
+    const cached = await this.redisService.get(cacheKey);
 
-    if (cachedReviews) {
-      return JSON.parse(cachedReviews) as Review[];
+    if (cached) {
+      return JSON.parse(cached) as PaginatedReviews;
     }
 
-    const reviews = await this.reviewsRepository.findByProductId(productId);
+    const skip = (page - 1) * limit;
+    const paginatedResult =
+      await this.reviewsRepository.findByProductIdPaginated(
+        productId,
+        skip,
+        limit,
+      );
 
-    // Cache reviews for 1 hour
-    await this.redisService.set(cacheKey, JSON.stringify(reviews), 3600);
+    const response: PaginatedReviews = {
+      data: paginatedResult.data,
+      total: paginatedResult.total,
+      page,
+      limit,
+      totalPages: Math.ceil(paginatedResult.total / limit),
+    };
 
-    return reviews;
+    // Cache for 1 hour
+    await this.redisService.set(cacheKey, JSON.stringify(response), 3600);
+
+    return response;
   }
 }

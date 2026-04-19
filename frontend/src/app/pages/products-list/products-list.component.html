@@ -1,0 +1,66 @@
+<section class="products-page container">
+  <div class="products-page__hero">
+    <h1 class="products-page__title">Explore Products</h1>
+    <p class="products-page__subtitle">Browse our catalog and share your honest reviews.</p>
+  </div>
+
+  @if (loading) {
+    <div class="products-page__loader">
+      <div class="spinner"></div>
+    </div>
+  } @else {
+    <div class="products-grid">
+      @for (product of products; track product._id) {
+        <a [routerLink]="['/products', product._id]" class="product-card">
+          <div class="product-card__image-wrap">
+            @if (product.imageUrl) {
+              <img [src]="product.imageUrl" [alt]="product.name" class="product-card__image" />
+            } @else {
+              <div class="product-card__image-placeholder">📦</div>
+            }
+          </div>
+          <div class="product-card__body">
+            <h2 class="product-card__name">{{ product.name }}</h2>
+            <p class="product-card__desc">{{ product.description }}</p>
+            <div class="product-card__footer">
+              <span class="product-card__price">{{ product.price | currency:'USD' }}</span>
+              <span class="product-card__cta">View Details →</span>
+            </div>
+          </div>
+        </a>
+      } @empty {
+        <div class="products-page__empty">
+          <p>No products found.</p>
+        </div>
+      }
+    </div>
+
+    @if (totalPages > 1) {
+      <nav class="pagination" aria-label="Product pages">
+        <button
+          class="pagination__btn"
+          [disabled]="currentPage === 1"
+          (click)="goToPage(currentPage - 1)"
+        >
+          ← Prev
+        </button>
+        @for (p of pages; track p) {
+          <button
+            class="pagination__btn"
+            [class.pagination__btn--active]="p === currentPage"
+            (click)="goToPage(p)"
+          >
+            {{ p }}
+          </button>
+        }
+        <button
+          class="pagination__btn"
+          [disabled]="currentPage === totalPages"
+          (click)="goToPage(currentPage + 1)"
+        >
+          Next →
+        </button>
+      </nav>
+    }
+  }
+</section>

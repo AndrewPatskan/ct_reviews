@@ -1,0 +1,101 @@
+@if (loading) {
+  <div class="detail-page container">
+    <div class="detail-page__loader">
+      <div class="spinner"></div>
+    </div>
+  </div>
+} @else if (product) {
+  <section class="detail-page container">
+    <a routerLink="/" class="detail-page__back">← Back to Products</a>
+
+    <div class="detail-page__hero">
+      <div class="detail-page__image-wrap">
+        @if (product.imageUrl) {
+          <img [src]="product.imageUrl" [alt]="product.name" class="detail-page__image" />
+        } @else {
+          <div class="detail-page__image-placeholder">📦</div>
+        }
+      </div>
+
+      <div class="detail-page__info">
+        <h1 class="detail-page__name">{{ product.name }}</h1>
+        <p class="detail-page__desc">{{ product.description }}</p>
+
+        <div class="detail-page__meta">
+          <span class="detail-page__price">{{ product.price | currency:'USD' }}</span>
+          @if (product.reviewCount > 0) {
+            <div class="detail-page__rating">
+              <app-star-rating [rating]="product.averageRating" />
+              <span class="detail-page__rating-text">
+                {{ product.averageRating }} / 5 · {{ product.reviewCount }} review{{ product.reviewCount === 1 ? '' : 's' }}
+              </span>
+            </div>
+          } @else {
+            <span class="detail-page__no-reviews">No reviews yet</span>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-page__content">
+      <div class="detail-page__reviews-section">
+        <h2 class="detail-page__section-title">Reviews ({{ product.reviewCount }})</h2>
+
+        @if (reviews.length === 0) {
+          <p class="detail-page__empty">Be the first to review this product!</p>
+        } @else {
+          <div class="reviews-list">
+            @for (review of reviews; track review._id) {
+              <article class="review-card">
+                <div class="review-card__header">
+                  <div class="review-card__avatar">{{ review.author.charAt(0).toUpperCase() }}</div>
+                  <div class="review-card__meta">
+                    <span class="review-card__author">{{ review.author }}</span>
+                    <span class="review-card__date">{{ review.createdAt | date:'mediumDate' }}</span>
+                  </div>
+                  <app-star-rating [rating]="review.rating" size="sm" />
+                </div>
+                <p class="review-card__text">{{ review.text }}</p>
+              </article>
+            }
+          </div>
+
+          @if (reviewsTotalPages > 1) {
+            <nav class="pagination" aria-label="Review pages">
+              <button
+                class="pagination__btn"
+                [disabled]="reviewsPage === 1"
+                (click)="goToReviewsPage(reviewsPage - 1)"
+              >
+                ← Prev
+              </button>
+              @for (p of reviewPages; track p) {
+                <button
+                  class="pagination__btn"
+                  [class.pagination__btn--active]="p === reviewsPage"
+                  (click)="goToReviewsPage(p)"
+                >
+                  {{ p }}
+                </button>
+              }
+              <button
+                class="pagination__btn"
+                [disabled]="reviewsPage === reviewsTotalPages"
+                (click)="goToReviewsPage(reviewsPage + 1)"
+              >
+                Next →
+              </button>
+            </nav>
+          }
+        }
+      </div>
+
+      <aside class="detail-page__form-section">
+        <app-review-form
+          [productId]="product._id"
+          (submitReview)="onReviewSubmit($event)"
+        />
+      </aside>
+    </div>
+  </section>
+}

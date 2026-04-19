@@ -31,4 +31,14 @@ export class ProductsRepository {
     const doc = await this.productModel.findById(id).exec();
     return doc as Product | null;
   }
+
+  async updateRating(
+    productId: string,
+    averageRating: number,
+    reviewCount: number,
+  ): Promise<void> {
+    await this.productModel
+      .findByIdAndUpdate(productId, { averageRating, reviewCount })
+      .exec();
+  }
 }
