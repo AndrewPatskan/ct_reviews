@@ -18,6 +18,8 @@ To spin up the entire application locally:
 docker-compose up --build -d
 ```
 
+**NOTE**: running with docker requires a few seconds to set seed data. refresh the page after a few seconds to see the data.
+
 or without docker:
 
 ```bash
