@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: ctreviews-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: ctreviews-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ctreviews-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      - MONGODB_URI=mongodb://mongodb:27017/ctreviews
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ctreviews-frontend
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
